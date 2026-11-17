@@ -9,3 +9,33 @@ here::i_am("Charm-Prices.Rproj")
 library(here)
 library(tidyverse)
 ```
+
+```{r}
+library(tidyverse)
+library(here)
+
+brent <- read_csv(here("data", "raw", "DCOILBRENTEU.csv"), na = c("", "."))
+fx    <- read_csv(here("data", "raw", "DEXUSEU.csv"),       na = c("", "."))
+
+glimpse(brent)
+glimpse(fx)
+```
+```{r}
+oil <- oil |>
+  fill(DCOILBRENTEU, DEXUSEU, .direction = "down")
+
+summary(oil)
+```
+
+```{r}
+oil <- oil |>
+  mutate(brent_eur_l = DCOILBRENTEU / DEXUSEU / 158.987)
+
+summary(oil$brent_eur_l)
+```
+```{r}
+dir.create(here("data", "clean"), showWarnings = FALSE)
+write_csv(oil, here("data", "clean", "oil.csv"))
+```
+
+

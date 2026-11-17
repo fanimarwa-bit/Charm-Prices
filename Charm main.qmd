@@ -1,25 +1,33 @@
 ---
-title: "Main charm.qmd"
-format: html
+title: "Rockets, Feathers and Charm Prices"
+author: "Marwa Fani and Salma Sbihi"
+format:
+  html:
+    toc: true
+    embed-resources: true
 ---
-
-## Quarto
-
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
-
-## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+GitHub repository: https://github.com/fanimarwa-bit/Charm-Prices
 
 ```{r}
-1 + 1
-```
+#| warning: false
+#| message: false
+library(tidyverse)
+library(here)
 
-You can add options to executable code like this 
+oil <- read_csv(here("data", "clean", "oil.csv"), show_col_types = FALSE)
+filo <- read_csv(here("data", "clean", "filosofi.csv"),
+                 col_types = cols(commune = "c"))
+cog <- read_csv(here("data", "clean", "cog.csv"),
+                col_types = cols(.default = "c"))
+```
 
 ```{r}
-#| echo: false
-2 * 2
+info <- tibble(
+  file = c("oil.csv", "filosofi.csv", "cog.csv"),
+  rows = c(nrow(oil), nrow(filo), nrow(cog)),
+  columns = c(ncol(oil), ncol(filo), ncol(cog))
+)
+
+knitr::kable(info)
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
