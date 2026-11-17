@@ -1,0 +1,11 @@
+---
+title: "Cleaning: stations"
+author: "Marwa Fani and Salma Sbihi"
+format: html
+---
+
+```{r}
+here::i_am("Charm-Prices.Rproj")
+library(here)
+library(tidyverse)
+```

@@ -1,0 +1,11 @@
+---
+title: "Cleaning: Brent and exchange rate"
+author: "Marwa Fani and Salma Sbihi"
+format: html
+---
+
+```{r}
+here::i_am("Charm-Prices.Rproj")
+library(here)
+library(tidyverse)
+```
