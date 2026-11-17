@@ -6,18 +6,6 @@ format: html
 ---
 
 ```{r}
-<<<<<<< HEAD
-install.packages(c(
-  "tidyverse",
-  "data.table",
-  "xml2",
-  "sf",
-  "knitr",
-  "usethis",
-  "gitcreds"
-))
-```
-=======
 here::i_am("Charm-Prices.Rproj")
 library(here)
 library(tidyverse)
