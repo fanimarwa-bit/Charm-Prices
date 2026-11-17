@@ -1,3 +1,17 @@
+
 ---
 title: "_cleaning.qmd"
 format: html
+---
+
+```{r}
+install.packages(c(
+  "tidyverse",
+  "data.table",
+  "xml2",
+  "sf",
+  "knitr",
+  "usethis",
+  "gitcreds"
+))
+```
