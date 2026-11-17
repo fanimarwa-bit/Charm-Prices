@@ -1,10 +1,12 @@
 
 ---
-title: "_cleaning.qmd"
+title: "Data cleaning"
+author: "Marwa Fani and Salma Sbihi"
 format: html
 ---
 
 ```{r}
+<<<<<<< HEAD
 install.packages(c(
   "tidyverse",
   "data.table",
@@ -15,3 +17,27 @@ install.packages(c(
   "gitcreds"
 ))
 ```
+=======
+here::i_am("Charm-Prices.Rproj")
+library(here)
+library(tidyverse)
+library(sf)
+```
+
+#now loading the small csv files
+```{r}
+brent <- read_csv(here("data", "raw", "DCOILBRENTEU.csv"), na = c("", "."))
+fx    <- read_csv(here("data", "raw", "DEXUSEU.csv"), na = c("", "."))
+
+communes <- read_csv(here("data", "raw", "v_commune_2025.csv"),
+                     col_types = cols(.default = col_character()))
+mvt      <- read_csv(here("data", "raw", "v_mvt_commune_2025.csv"),
+                     col_types = cols(.default = col_character()))
+
+filo_raw  <- read_delim(here("data", "raw", "filosofi_2021_data.csv"),
+                        col_types = cols(.default = col_character()))
+filo_meta <- read_delim(here("data", "raw", "filosofi_2021_metadata.csv"),
+                        col_types = cols(.default = col_character()))
+```
+
+>>>>>>> b7c77966ceecd0b4b83681a5ecae74b60a2ef967
