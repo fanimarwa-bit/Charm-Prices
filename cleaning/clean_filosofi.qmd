@@ -9,3 +9,52 @@ here::i_am("Charm-Prices.Rproj")
 library(here)
 library(tidyverse)
 ```
+
+```{r}
+library(tidyverse)
+library(here)
+
+filo_raw <- read_delim(here("data", "raw", "filosofi_2021_data.csv"),
+                       delim = ";", col_types = cols(.default = "c"))
+
+glimpse(filo_raw)
+```
+```{r}
+filo_raw |> count(GEO_OBJECT)
+
+filo_raw |> distinct(FILOSOFI_MEASURE) |> print(n = 50)
+```
+```{r}
+filo_sel <- filo_raw |>
+  filter(GEO_OBJECT == "COM",
+         FILOSOFI_MEASURE %in% c("MED_SL", "PR_MD60"))
+
+filo_sel |> count(FILOSOFI_MEASURE, UNIT_MEASURE)
+
+filo_sel |> count(GEO, FILOSOFI_MEASURE) |> filter(n > 1)
+```
+```{r}
+filo <- filo_sel |>
+  mutate(OBS_VALUE = as.numeric(OBS_VALUE)) |>
+  select(commune = GEO, measure = FILOSOFI_MEASURE, value = OBS_VALUE) |>
+  pivot_wider(names_from = measure, values_from = value) |>
+  rename(median_living_standard = MED_SL,
+         poverty_rate = PR_MD60)
+
+glimpse(filo)
+```
+
+```{r}
+filo |>
+  summarise(
+    n_communes = n(),
+    hidden_median = sum(is.na(median_living_standard)),
+    hidden_poverty = sum(is.na(poverty_rate)),
+    share_hidden_poverty = mean(is.na(poverty_rate))
+  )
+```
+```{r}
+dir.create(here("data", "clean"), showWarnings = FALSE)
+write_csv(filo, here("data", "clean", "filosofi.csv"))
+```
+
