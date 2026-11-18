@@ -9,3 +9,40 @@ here::i_am("Charm-Prices.Rproj")
 library(here)
 library(tidyverse)
 ```
+
+
+#first read the data
+```{r}
+stations_raw <- map_dfr(2021:2023, function(y) {
+  read_csv(here("data", paste0("stations_", y, ".csv")),
+           col_types = cols(.default = col_character())) %>%
+    mutate(year = y)
+})
+```
+
+#cleaning the data
+```{r}
+stations <- stations_raw %>%
+  mutate(latitude  = as.numeric(latitude) / 100000,     # 4620114 -> 46.20114
+         longitude = as.numeric(longitude) / 100000,
+         latitude  = na_if(latitude, 0),                # 0 = no coordinates
+         longitude = na_if(longitude, 0),
+         cp        = str_pad(cp, 5, pad = "0"),         # 1000 -> "01000"
+         motorway  = pop == "A") %>%                    # A = motorway, R = road
+  arrange(id, desc(year)) %>%
+  distinct(id, .keep_all = TRUE) %>%                    # one row per station (latest year)
+  select(id, latitude, longitude, cp, motorway, last_year = year)
+```
+
+#checking part 
+```{r}
+nrow(stations)                    # number of stations
+sum(is.na(stations$latitude))     # stations without coordinates
+summary(stations$latitude)        # France: 41 to 51 (overseas: down to about -21)
+summary(stations$longitude)
+count(stations, motorway)
+```
+```{r}
+write_csv(stations, here("data", "clean", "stations.csv"))
+```
+
