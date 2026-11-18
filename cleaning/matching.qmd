@@ -5,7 +5,29 @@ format: html
 ---
 
 ```{r}
-here::i_am("Charm-Prices.Rproj")
-library(here)
 library(tidyverse)
+library(here)
+
+cog  <- read_csv(here("data", "clean", "cog.csv"),
+                 col_types = cols(.default = "c"))
+filo <- read_csv(here("data", "clean", "filosofi.csv"),
+                 col_types = cols(commune = "c"))
+
+communes <- cog |>
+  left_join(filo, by = "commune")
+
+glimpse(communes)
+nrow(communes)
 ```
+```{r}
+communes |>
+  summarise(
+    n_communes = n(),
+    with_median = sum(!is.na(median_living_standard)),
+    with_poverty = sum(!is.na(poverty_rate)),
+    no_filosofi_row = sum(is.na(median_living_standard) & is.na(poverty_rate))
+  )
+
+write_csv(communes, here("data", "clean", "communes.csv"))
+```
+
