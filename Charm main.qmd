@@ -70,3 +70,11 @@ ggplot(oil, aes(observation_date, brent_eur_l)) +
 - **`median_living_standard`**: median living standard of a commune, in euros per year (INSEE Filosofi 2021). It measures how well off the typical inhabitant is. Missing for communes where INSEE hides it.
 - **`poverty_rate`**: share of people living below the poverty line (60% of the median living standard), in percent. Missing for most small communes.
 - **`commune`**: five-character official commune code (COG), stored as text so leading zeros are kept (e.g. `01001`). It is the join key between stations and Filosofi.
+
+### Joining (to be UPDATED APRES THE FULL MATCHING )
+
+**Brent and USD/EUR (done).** The two FRED files were joined on the date (`observation_date`). A row was then added for every calendar day, and weekends and holidays were filled with the last known value. The result is one table with `r nrow(oil)` daily rows, so every fuel price date will find a match later.
+
+**Filosofi and COG (checked).** We compared the commune codes of the two files: all `r nrow(filo)` Filosofi communes are found in the COG. The `r nrow(cog) - nrow(filo)` COG communes without income data are all overseas (Guadeloupe, French Guiana, Mayotte) and will be excluded from the income analysis.
+
+**Still to do (`matching.qmd`).** Stations to communes, then communes to Filosofi, and oil to fuel prices through the date. *Details to be completed once the stations and prices are cleaned.*
