@@ -29,3 +29,45 @@ filo_meta <- read_delim(here("data", "raw", "filosofi_2021_metadata.csv"),
 ```
 
 
+##NOW uploading the xml data (prices) and converting it
+
+```{r}
+xml_to_csv <- function(year) {          # making a function that  takes a year, e.g. 2022
+
+  xml <- read_lines(here("data", "raw", paste0("PrixCarburants_annuel_", year, ".xml"))) %>%  # 1. read the file: one  element per line 
+    str_trim() %>%                       # 2. remove the spaces at the start of each line
+    tibble(line = .) %>%                 # 3. turn it into a table with one column, "line"
+    filter(str_detect(line, "^<(pdv|prix) ")) %>%  # 4. keep only lines starting with <pdv or <prix
+    mutate(id = str_match(line, '^<pdv id="(\\d+)"')[, 2]) %>% # 5.on <pdv> lines, take the number after id=
+                                         #    (on <prix> lines this gives NA)
+    fill(id)                             # 6. copy each station's id down to its price lines
+
+  stations <- xml %>%
+    filter(str_detect(line, "^<pdv")) %>%        # 7. keep station lines only
+    mutate(latitude  = str_match(line, 'latitude="([^"]*)"')[, 2],  
+           longitude = str_match(line, 'longitude="([^"]*)"')[, 2],  
+           cp        = str_match(line, 'cp="([^"]*)"')[, 2],
+           pop       = str_match(line, 'pop="([^"]*)"')[, 2]) %>%
+    select(-line)                                # drop the raw text column
+
+  prices <- xml %>%
+    filter(str_detect(line, "^<prix")) %>%       # 8. keeping  prices lines only
+    mutate(fuel   = str_match(line, 'nom="([^"]*)"')[, 2],
+           maj    = str_match(line, 'maj="([^"]*)"')[, 2],
+           valeur = str_match(line, 'valeur="([^"]*)"')[, 2]) %>%
+    select(-line)
+
+  write_csv(stations, here("data", paste0("stations_", year, ".csv")))      #this is for saving 
+  write_csv(prices, here("data", paste0("prices_", year, ".csv.gz")))
+}
+```
+
+
+## Applying the function on the xml data on the three years: 2021-2022-2023:
+```{r}
+#| eval: false     #the code is shown in the HTML but not run because other wise we do not write it (eval : true and the code is   run and shown in the html) 
+xml_to_csv(2021)   # converts the 2021 XML → stations_2021.csv + prices_2021.csv.gz
+xml_to_csv(2022)   # same for 2022
+xml_to_csv(2023)   # same for 2023
+```
+
