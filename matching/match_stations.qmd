@@ -179,4 +179,34 @@ stations_full |>
   filter(!is.na(commune), is.na(median_living_standard)) |>
   count(dept = substr(commune, 1, 3), sort = TRUE)
 ```
+```{r}
+check <- stations_full |>
+  filter(!is.na(commune)) |>
+  mutate(dep_cp  = substr(cp, 1, 2),
+         dep_com = substr(commune, 1, 2),
+         ok = dep_cp == dep_com |
+              (dep_cp == "20" & dep_com %in% c("2A", "2B")))
 
+check |> count(ok)
+check |> filter(!ok) |> select(id, cp, commune, latitude, longitude)
+```
+```{r}
+stations_full <- stations_full |>
+  mutate(dep_cp  = substr(cp, 1, 2),
+         dep_com = substr(commune, 1, 2),
+         commune_agrees_cp = case_when(
+           is.na(commune) ~ NA,
+           dep_cp == dep_com ~ TRUE,
+           dep_cp == "20" & dep_com %in% c("2A", "2B") ~ TRUE,
+           TRUE ~ FALSE)) |>
+  select(-dep_cp, -dep_com)
+
+stations_full |> count(commune_agrees_cp)
+
+write_csv(stations_full, here("data", "clean", "stations_communes.csv"))
+```
+```{r}
+p21 |> distinct(id) |> anti_join(stations_full, by = "id") |> nrow()
+```
+
+**Stations, communes and income (done).** The stations file has GPS coordinates and a postal code but no commune code, so we matched each station to a commune with a spatial join on the IGN Admin Express 2025 boundaries. Before that, we repaired the coordinates of 59 stations (latitude and longitude swapped, sometimes divided by 100,000 twice). Five stations had impossible values and were set to missing, so with the 74 stations that had no coordinates, 79 of the 14,003 stations have no commune. Sixteen coastal stations fell just outside the simplified boundaries and were given the nearest commune. To validate the match, we compared the department of the commune with the department of the postal code: they agree for 99.7% of stations, and the 48 others are flagged (`commune_agrees_cp`). Finally, the commune code was joined to Filosofi to give each station its commune's median living standard (13,907 stations have one). A limit is that the boundaries are simplified, so a station near a border may be assigned to the neighbouring commune.
