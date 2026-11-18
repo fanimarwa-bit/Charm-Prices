@@ -9,3 +9,55 @@ here::i_am("Charm-Prices.Rproj")
 library(here)
 library(tidyverse)
 ```
+
+
+# The data only records price CHANGES: on days without a change, a station still
+# sells at its last price, so we carry it forward to count every station every day.
+# Limit 30 days: after that, the station has probably stopped selling/reporting.
+
+```{r}
+#| eval: false
+prices_daily <- map_dfr(2021:2023, function(y)
+  read_csv(here("data", "clean", paste0("prices_daily_", y, ".csv.gz")),
+           col_types = cols(id = "c", fuel = "c", date = "D", price = "d")))
+
+national_daily <- function(fuel_name) {
+  prices_daily %>%
+    filter(fuel == fuel_name) %>%
+    complete(id, date = seq(as.Date("2021-01-01"), as.Date("2023-12-31"), by = "day")) %>%
+    mutate(last_change = if_else(is.na(price), as.Date(NA), date)) %>%
+    group_by(id) %>%
+    fill(price, last_change) %>%                          # keep the last price until it changes
+    ungroup() %>%
+    filter(!is.na(price), date - last_change <= 30) %>%   # ...for 30 days at most
+    group_by(date) %>%
+    summarise(avg_price = mean(price), n_stations = n()) %>%
+    mutate(fuel = fuel_name)
+}
+
+
+oil <- read_csv(here("data", "clean", "oil.csv"))      
+
+daily_national <- map_dfr(c("Gazole", "E10", "SP98"), national_daily) %>%
+  left_join(oil, by = "date")
+
+write_csv(daily_national, here("data", "clean", "daily_national.csv"))
+```
+
+
+#checking
+```{r}
+daily_national <- read_csv(here("data", "clean", "daily_national.csv"))
+count(daily_national, fuel)              # 1,095 days per fuel
+sum(is.na(daily_national$brent_eur_l))  
+summary(daily_national$n_stations)       # stations counted per day
+```
+#I would like to take a look at how tthe data looks like so: 
+```{r}
+daily_national %>%
+  filter(fuel == "Gazole") %>%
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = avg_price)) +
+  geom_line(aes(y = brent_eur_l), linetype = "dashed")
+```
+#$Brent and the exchange rate start on 4 January 2021; 1–3 January (holiday and weekend) use the first available value.....

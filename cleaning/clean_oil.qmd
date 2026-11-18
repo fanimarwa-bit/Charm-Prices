@@ -24,17 +24,16 @@ glimpse(fx)
 ```
 ```{r}
 oil <- tibble(date = seq(as.Date("2020-12-01"), as.Date("2023-12-31"), by = "day")) %>%
-  left_join(brent %>% rename(date = 1), by = "date") %>%   # 1st column = the date
+  left_join(brent %>% rename(date = 1), by = "date") %>%
   left_join(fx %>% rename(date = 1), by = "date") # building a calendar for evryday, and attaching each oil and exchange rate to a day 
 ```
 
 
 
 ```{r}
-oil <- oil |>
-  fill(DCOILBRENTEU, DEXUSEU, .direction = "down")
-
-summary(oil)
+oil <- oil %>%
+  fill(DCOILBRENTEU, DEXUSEU, .direction = "down") %>%
+  filter(date >= as.Date("2021-01-01"))
 ```
 
 
