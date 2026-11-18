@@ -30,4 +30,17 @@ communes |>
 
 write_csv(communes, here("data", "clean", "communes.csv"))
 ```
+```{r}
+p21 <- read_csv(here("data", "clean", "prices_daily_2021.csv.gz"),
+                col_types = cols(id = "c", fuel = "c"))
+
+glimpse(p21)
+```
+```{r}
+stations <- read_csv(here("data", "clean", "stations.csv"),
+                     col_types = cols(.default = "c"))
+
+glimpse(stations)
+nrow(stations)
+```
 
