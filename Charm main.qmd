@@ -37,3 +37,36 @@ ggplot(oil, aes(observation_date, brent_eur_l)) +
   labs(x = NULL, y = "Brent crude oil (€ per litre)")
 ```
 
+## Sources
+
+1. **Fuel prices** (Ministry of Economy): <https://www.prix-carburants.gouv.fr/rubrique/opendata/>, yearly archives at `https://donnees.roulez-eco.fr/opendata/annee/YYYY`
+2. **Brent crude oil** (EIA via FRED): <https://fred.stlouisfed.org/series/DCOILBRENTEU>
+3. **USD/EUR exchange rate** (Federal Reserve H.10 via FRED): <https://fred.stlouisfed.org/series/DEXUSEU>
+4. **INSEE Filosofi 2021**: <https://www.insee.fr/fr/statistiques/7756729>
+5. **COG 2025, list of communes**: <https://www.insee.fr/fr/statistiques/fichier/8377162/v_commune_2025.csv>
+6. **COG 2025, commune changes**: <https://www.insee.fr/fr/statistiques/fichier/8377162/v_mvt_commune_2025.csv>
+7. **IGN Admin Express COG 2025, commune boundaries**: <https://geoservices.ign.fr/adminexpress>
+
+
+## Description of the sources (SALMA A REVOIR HAD DESCRIPTION)
+
+**Brent crude oil (FRED / EIA).** The series is the daily spot price of Brent crude in US dollars per barrel, produced by the U.S. Energy Information Administration and distributed by FRED. It is published on business days only, so weekends and holidays are missing. We use 2021 to 2023 and fill the gaps with the last known value. Brent is a world price, identical for all French stations.
+
+**USD/EUR exchange rate (FRED / Federal Reserve).** The rate comes from the Federal Reserve's H.10 release: the noon buying rate in New York, in dollars per euro, on business days only. We use it to convert Brent into euros per litre.
+
+**INSEE Filosofi 2021.** INSEE builds Filosofi by linking income tax returns from the tax administration (DGFiP) with social benefit data. We use the commune level and keep the median living standard and the poverty rate. INSEE hides some values for confidentiality: the median is missing for `r sum(is.na(filo$median_living_standard))` of the `r nrow(filo)` communes and the poverty rate for `r sum(is.na(filo$poverty_rate))`. We treat income as a fixed characteristic of each commune.
+
+**COG 2025 (INSEE).** The Code officiel géographique is the official list of French communes and their codes. After keeping real communes only (`TYPECOM == "COM"`), we have `r nrow(cog)` communes. The codes are the join key with Filosofi. `r nrow(cog) - nrow(filo)` communes of the COG have no Filosofi data (all in Guadeloupe, French Guiana and Mayotte).
+
+**Fuel prices (Ministry of Economy).**
+
+
+
+## Key variables
+
+- **`brent_eur_l`**: Brent crude oil price converted to euros per litre (Brent in $/barrel, divided by the USD/EUR rate, divided by 158.987 litres per barrel). One value per calendar day.
+- **`DCOILBRENTEU`** and **`DEXUSEU`**: the original Brent price in dollars per barrel and the exchange rate in dollars per euro. They are kept so the conversion can be checked.
+- **`observation_date`**: the day of the observation. It is the key used to match oil prices with fuel prices.
+- **`median_living_standard`**: median living standard of a commune, in euros per year (INSEE Filosofi 2021). It measures how well off the typical inhabitant is. Missing for communes where INSEE hides it.
+- **`poverty_rate`**: share of people living below the poverty line (60% of the median living standard), in percent. Missing for most small communes.
+- **`commune`**: five-character official commune code (COG), stored as text so leading zeros are kept (e.g. `01001`). It is the join key between stations and Filosofi.
