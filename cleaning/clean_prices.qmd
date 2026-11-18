@@ -88,7 +88,8 @@ clean_prices <- function(year) {
                   col_types = cols(.default = col_character()))
 
   prices <- raw %>%
-    mutate(price = as.numeric(valeur),          # text -> number
+    mutate(price = as.numeric(valeur),   # text -> number
+           price = if_else(price > 10, price / 1000, price), #because in 2021 they write 1.25 euro this way 1250 
            time  = ymd_hms(maj),                # "2022-01-03T08:44:18" -> date-time
            date  = as_date(time)) %>%           # -> date only
     filter(!is.na(price), !is.na(date)) %>%     # remove missing values
@@ -110,9 +111,9 @@ clean_prices <- function(year) {
 ##running the code
 ```{r}
 #| eval: false
-prices_log <- map_dfr(2021:2023, clean_prices). #the map_dfr stacks those three rows into one table
-prices_log. #print this table 
-write_csv(prices_log, here("data", "clean", "prices_log.csv")). #saving this table
+prices_log <- map_dfr(2021:2023, clean_prices) #the map_dfr stacks those three rows into one table
+prices_log  #print this table 
+write_csv(prices_log, here("data", "clean", "prices_log.csv"))  #saving this table
 ```
 
 what was done here is removing the prices outside of 0.5- 3.5 ( impossible prices)

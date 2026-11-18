@@ -44,5 +44,5 @@ count(stations, motorway)
 ```
 ```{r}
 write_csv(stations, here("data", "clean", "stations.csv"))
-```
+``` 
 
