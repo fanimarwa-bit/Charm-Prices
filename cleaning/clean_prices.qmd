@@ -71,3 +71,51 @@ xml_to_csv(2022)   # same for 2022
 xml_to_csv(2023)   # same for 2023
 ```
 
+
+##Now the cleaning part 
+#quick check of the data
+```{r}
+prices_2022 <- read_csv(here("data", "prices_2022.csv.gz"),
+                        col_types = cols(.default = col_character()))
+count(prices_2022, fuel)
+summary(as.numeric(prices_2022$valeur))
+```
+
+##cleaning part
+```{r}
+clean_prices <- function(year) {
+  raw <- read_csv(here("data", paste0("prices_", year, ".csv.gz")),
+                  col_types = cols(.default = col_character()))
+
+  prices <- raw %>%
+    mutate(price = as.numeric(valeur),          # text -> number
+           time  = ymd_hms(maj),                # "2022-01-03T08:44:18" -> date-time
+           date  = as_date(time)) %>%           # -> date only
+    filter(!is.na(price), !is.na(date)) %>%     # remove missing values
+    filter(price >= 0.5, price <= 3.5,          # remove impossible prices
+           year(date) == year) %>%              # remove dates outside the year
+    distinct(id, fuel, time, .keep_all = TRUE)  # remove duplicates
+
+  daily <- prices %>%                           # one price per station, fuel and day:
+    arrange(id, fuel, time) %>%                 # the last one of the day
+    group_by(id, fuel, date) %>%
+    summarise(price = last(price), .groups = "drop")
+
+  write_csv(daily, here("data", "clean", paste0("prices_daily_", year, ".csv.gz")))
+
+  tibble(year = year, raw_rows = nrow(raw), kept_rows = nrow(prices), daily_rows = nrow(daily))
+}
+```
+
+##running the code
+```{r}
+#| eval: false
+prices_log <- map_dfr(2021:2023, clean_prices). #the map_dfr stacks those three rows into one table
+prices_log. #print this table 
+write_csv(prices_log, here("data", "clean", "prices_log.csv")). #saving this table
+```
+
+what was done here is removing the prices outside of 0.5- 3.5
+dates outside the file's year 
+and remove same dates, fuel and stations
+and one price for station, keeping the last price of that station that day, bceause each station has sevral prices.
