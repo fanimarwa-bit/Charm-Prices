@@ -1,3 +1,4 @@
+
 ---
 title: "Data cleaning"
 author: "Marwa Fani and Salma Sbihi"
@@ -27,3 +28,4 @@ filo_meta <- read_delim(here("data", "raw", "filosofi_2021_metadata.csv"),
                         col_types = cols(.default = col_character()))
 ```
 
+>>>>>>> b7c77966ceecd0b4b83681a5ecae74b60a2ef967

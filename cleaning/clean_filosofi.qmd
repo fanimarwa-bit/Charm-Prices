@@ -9,3 +9,85 @@ here::i_am("Charm-Prices.Rproj")
 library(here)
 library(tidyverse)
 ```
+
+```{r}
+library(tidyverse)
+library(here)
+
+filo_raw <- read_delim(here("data", "raw", "filosofi_2021_data.csv"),
+                       delim = ";", col_types = cols(.default = "c"))
+
+glimpse(filo_raw)
+```
+```{r}
+filo_raw |> count(GEO_OBJECT)
+
+filo_raw |> distinct(FILOSOFI_MEASURE) |> print(n = 50)
+```
+```{r}
+filo_sel <- filo_raw |>
+  filter(GEO_OBJECT == "COM",
+         FILOSOFI_MEASURE %in% c("MED_SL", "PR_MD60"))
+
+filo_sel |> count(FILOSOFI_MEASURE, UNIT_MEASURE)
+
+filo_sel |> count(GEO, FILOSOFI_MEASURE) |> filter(n > 1)
+```
+```{r}
+filo <- filo_sel |>
+  mutate(OBS_VALUE = as.numeric(OBS_VALUE)) |>
+  select(commune = GEO, measure = FILOSOFI_MEASURE, value = OBS_VALUE) |>
+  pivot_wider(names_from = measure, values_from = value) |>
+  rename(median_living_standard = MED_SL,
+         poverty_rate = PR_MD60)
+
+glimpse(filo)
+```
+
+```{r}
+filo |>
+  summarise(
+    n_communes = n(),
+    hidden_median = sum(is.na(median_living_standard)),
+    hidden_poverty = sum(is.na(poverty_rate)),
+    share_hidden_poverty = mean(is.na(poverty_rate))
+  )
+```
+```{r}
+dir.create(here("data", "clean"), showWarnings = FALSE)
+write_csv(filo, here("data", "clean", "filosofi.csv"))
+```
+
+```{r}
+cog_raw <- read_csv(here("data", "raw", "v_commune_2025.csv"),
+                    col_types = cols(.default = "c"))
+
+glimpse(cog_raw)
+```
+```{r}
+cog <- cog_raw |>
+  filter(TYPECOM == "COM") |>
+  select(commune = COM, name = LIBELLE, department = DEP, region = REG)
+
+glimpse(cog)
+cog |> count(commune) |> filter(n > 1)
+```
+```{r}
+write_csv(cog, here("data", "clean", "cog.csv"))
+
+# Filosofi codes that are NOT in the COG
+filo |> anti_join(cog, by = "commune") |> nrow()
+
+# COG codes that are NOT in Filosofi
+cog |> anti_join(filo, by = "commune") |> nrow()
+```
+```{r}
+missing_filo <- cog |> anti_join(filo, by = "commune")
+
+missing_filo |> count(department, sort = TRUE)
+
+missing_filo |> slice_head(n = 15)
+```
+71 communes of the COG 2025 have no Filosofi data: all are in Guadeloupe, French Guiana and Mayotte. They are excluded from the income analysis.
+
+
