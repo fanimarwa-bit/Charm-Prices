@@ -32,7 +32,8 @@ knitr::kable(info)
 ```
 
 ```{r}
-ggplot(oil, aes(observation_date, brent_eur_l)) +
+names(oil)
+ggplot(oil, aes(date, brent_eur_l)) +
   geom_line() +
   labs(x = NULL, y = "Brent crude oil (€ per litre)")
 ```
