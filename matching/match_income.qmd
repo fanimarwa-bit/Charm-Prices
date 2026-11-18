@@ -1,5 +1,5 @@
 ---
-title: "Matching"
+title: "Match 2: income to communes" 
 author: "Marwa Fani and Salma Sbihi"
 format: html
 ---
@@ -19,6 +19,7 @@ communes <- cog |>
 glimpse(communes)
 nrow(communes)
 ```
+
 ```{r}
 communes |>
   summarise(
@@ -30,6 +31,8 @@ communes |>
 
 write_csv(communes, here("data", "clean", "communes.csv"))
 ```
+
+
 ```{r}
 p21 <- read_csv(here("data", "clean", "prices_daily_2021.csv.gz"),
                 col_types = cols(id = "c", fuel = "c"))
