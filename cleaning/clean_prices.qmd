@@ -1,5 +1,5 @@
 ---
-title: "Data cleaning"
+title: "clean prices"
 author: "Marwa Fani and Salma Sbihi"
 format: html
 ---
@@ -115,7 +115,7 @@ prices_log. #print this table
 write_csv(prices_log, here("data", "clean", "prices_log.csv")). #saving this table
 ```
 
-what was done here is removing the prices outside of 0.5- 3.5
+what was done here is removing the prices outside of 0.5- 3.5 ( impossible prices)
 dates outside the file's year 
 and remove same dates, fuel and stations
 and one price for station, keeping the last price of that station that day, bceause each station has sevral prices.
