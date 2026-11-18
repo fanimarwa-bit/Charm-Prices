@@ -73,8 +73,8 @@ ggplot(oil, aes(observation_date, brent_eur_l)) +
 
 ### Joining (to be UPDATED APRES THE FULL MATCHING )
 
-**Brent and USD/EUR (done).** The two FRED files were joined on the date (`observation_date`). A row was then added for every calendar day, and weekends and holidays were filled with the last known value. The result is one table with `r nrow(oil)` daily rows, so every fuel price date will find a match later.
+**Brent and USD/EUR (done).** The two FRED files were joined on the date (`euug`). A row was then added for every calendar day, and weekends and holidays were filled with the last known value. The result is one table with `r nrow(oil)` daily rows, so every fuel price date will find a match later.
 
-**Filosofi and COG (checked).** We compared the commune codes of the two files: all `r nrow(filo)` Filosofi communes are found in the COG. The `r nrow(cog) - nrow(filo)` COG communes without income data are all overseas (Guadeloupe, French Guiana, Mayotte) and will be excluded from the income analysis.
+**Filosofi and COG (checked).** We compared the commune codes of the two files: all `r nrow(filo)` Filosofi communes are found in the COG. The `r nrow(cog) - nrow(filo)` COG communes without income data are all overseas (Guadeloupe, French Guiana, Mayotte) and will be excluded from the income analysis. SALMA YOU JOINED DONC A CHANGER CA
 
 **Still to do (`matching.qmd`).** Stations to communes, then communes to Filosofi, and oil to fuel prices through the date. *Details to be completed once the stations and prices are cleaned.*
