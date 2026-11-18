@@ -1,11 +1,212 @@
 ---
-title: "Matching: stations to communes"
+title: "Matching"
 author: "Marwa Fani and Salma Sbihi"
 format: html
 ---
 
 ```{r}
-here::i_am("Charm-Prices.Rproj")
-library(here)
 library(tidyverse)
+library(here)
+
+cog  <- read_csv(here("data", "clean", "cog.csv"),
+                 col_types = cols(.default = "c"))
+filo <- read_csv(here("data", "clean", "filosofi.csv"),
+                 col_types = cols(commune = "c"))
+
+communes <- cog |>
+  left_join(filo, by = "commune")
+
+glimpse(communes)
+nrow(communes)
 ```
+```{r}
+communes |>
+  summarise(
+    n_communes = n(),
+    with_median = sum(!is.na(median_living_standard)),
+    with_poverty = sum(!is.na(poverty_rate)),
+    no_filosofi_row = sum(is.na(median_living_standard) & is.na(poverty_rate))
+  )
+
+write_csv(communes, here("data", "clean", "communes.csv"))
+```
+```{r}
+p21 <- read_csv(here("data", "clean", "prices_daily_2021.csv.gz"),
+                col_types = cols(id = "c", fuel = "c"))
+
+glimpse(p21)
+```
+```{r}
+stations <- read_csv(here("data", "clean", "stations.csv"),
+                     col_types = cols(.default = "c"))
+
+glimpse(stations)
+nrow(stations)
+```
+
+```{r}
+stations <- stations |>
+  mutate(latitude = as.numeric(latitude),
+         longitude = as.numeric(longitude))
+
+stations |>
+  summarise(n = n(),
+            no_coords = sum(is.na(latitude) | is.na(longitude)),
+            lat_min = min(latitude, na.rm = TRUE),
+            lat_max = max(latitude, na.rm = TRUE),
+            lon_min = min(longitude, na.rm = TRUE),
+            lon_max = max(longitude, na.rm = TRUE))
+```
+
+```{r}
+odd <- stations |>
+  filter(!is.na(latitude),
+         !(latitude > 41 & latitude < 51.5 & longitude > -5.5 & longitude < 10))
+
+nrow(odd)
+odd |> count(substr(cp, 1, 2), sort = TRUE) |> print(n = 20)
+odd |> slice_head(n = 15)
+```
+
+```{r}
+stations <- stations |>
+  mutate(
+    # 1. values divided by 100,000 twice: put the scale back
+    tiny = !is.na(latitude) & abs(latitude) < 0.01 & abs(longitude) < 0.01,
+    latitude  = if_else(tiny, latitude * 1e5, latitude),
+    longitude = if_else(tiny, longitude * 1e5, longitude),
+    # 2. latitude and longitude swapped (mainland values only)
+    swapped = !is.na(latitude) &
+      latitude > -6 & latitude < 11 & longitude > 40 & longitude < 52,
+    lat_new = if_else(swapped, longitude, latitude),
+    lon_new = if_else(swapped, latitude, longitude),
+    latitude = lat_new,
+    longitude = lon_new
+  ) |>
+  select(-lat_new, -lon_new)
+
+stations |> count(tiny, swapped)
+
+odd <- stations |>
+  filter(!is.na(latitude),
+         !(latitude > 41 & latitude < 51.5 & longitude > -5.5 & longitude < 10))
+nrow(odd)
+odd |> count(substr(cp, 1, 2), sort = TRUE) |> print(n = 20)
+```
+```{r}
+odd |> select(id, latitude, longitude, cp)
+stations |> count(tiny, swapped)
+```
+```{r}
+stations <- stations |>
+  mutate(bad = !is.na(latitude) & !(substr(cp, 1, 2) %in% c("97", "98")) &
+           !(latitude > 41 & latitude < 51.5 & longitude > -5.5 & longitude < 10),
+         latitude  = if_else(bad, NA_real_, latitude),
+         longitude = if_else(bad, NA_real_, longitude)) |>
+  select(-bad, -tiny, -swapped)
+
+stations |> summarise(no_coords = sum(is.na(latitude)))
+```
+
+```{r}
+library(sf)
+
+gpkg <- here("data", "raw", "adminexpress-cog-simpl-000-2025.gpkg")
+st_layers(gpkg)
+```
+```{r}
+communes_sf <- st_read(gpkg, layer = "commune", quiet = TRUE)
+
+names(communes_sf)
+nrow(communes_sf)
+```
+```{r}
+# stations with coordinates become points (WGS 84, same CRS as the gpkg)
+st_pts <- stations |>
+  filter(!is.na(latitude)) |>
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove = FALSE)
+
+st_pts <- st_join(st_pts,
+                  communes_sf |> select(insee_com),
+                  join = st_within)
+
+st_pts |> st_drop_geometry() |>
+  summarise(n = n(),
+            matched = sum(!is.na(insee_com)),
+            unmatched = sum(is.na(insee_com)))
+```
+
+```{r}
+st_pts |>
+  st_drop_geometry() |>
+  filter(is.na(insee_com)) |>
+  select(id, latitude, longitude, cp)
+```
+```{r}
+unm <- st_pts |> filter(is.na(insee_com))
+
+idx <- st_nearest_feature(unm, communes_sf)
+unm$insee_nearest <- communes_sf$insee_com[idx]
+unm$dist_m <- as.numeric(st_distance(unm, communes_sf[idx, ], by_element = TRUE))
+
+unm |>
+  st_drop_geometry() |>
+  select(id, cp, insee_nearest, dist_m)
+```
+```{r}
+# commune code: polygon match, or nearest commune for the 16 coastal ones
+station_commune <- st_pts |>
+  st_drop_geometry() |>
+  select(id, insee_com) |>
+  left_join(unm |> st_drop_geometry() |> select(id, insee_nearest), by = "id") |>
+  mutate(commune = coalesce(insee_com, insee_nearest)) |>
+  select(id, commune)
+
+stations_full <- stations |>
+  left_join(station_commune, by = "id") |>
+  left_join(communes |> select(commune, median_living_standard, poverty_rate),
+            by = "commune")
+
+stations_full |>
+  summarise(n = n(),
+            with_commune = sum(!is.na(commune)),
+            with_median = sum(!is.na(median_living_standard)))
+
+write_csv(stations_full, here("data", "clean", "stations_communes.csv"))
+```
+```{r}
+stations_full |>
+  filter(!is.na(commune), is.na(median_living_standard)) |>
+  count(dept = substr(commune, 1, 3), sort = TRUE)
+```
+```{r}
+check <- stations_full |>
+  filter(!is.na(commune)) |>
+  mutate(dep_cp  = substr(cp, 1, 2),
+         dep_com = substr(commune, 1, 2),
+         ok = dep_cp == dep_com |
+              (dep_cp == "20" & dep_com %in% c("2A", "2B")))
+
+check |> count(ok)
+check |> filter(!ok) |> select(id, cp, commune, latitude, longitude)
+```
+```{r}
+stations_full <- stations_full |>
+  mutate(dep_cp  = substr(cp, 1, 2),
+         dep_com = substr(commune, 1, 2),
+         commune_agrees_cp = case_when(
+           is.na(commune) ~ NA,
+           dep_cp == dep_com ~ TRUE,
+           dep_cp == "20" & dep_com %in% c("2A", "2B") ~ TRUE,
+           TRUE ~ FALSE)) |>
+  select(-dep_cp, -dep_com)
+
+stations_full |> count(commune_agrees_cp)
+
+write_csv(stations_full, here("data", "clean", "stations_communes.csv"))
+```
+```{r}
+p21 |> distinct(id) |> anti_join(stations_full, by = "id") |> nrow()
+```
+
+**Stations, communes and income (done).** The stations file has GPS coordinates and a postal code but no commune code, so we matched each station to a commune with a spatial join on the IGN Admin Express 2025 boundaries. Before that, we repaired the coordinates of 59 stations (latitude and longitude swapped, sometimes divided by 100,000 twice). Five stations had impossible values and were set to missing, so with the 74 stations that had no coordinates, 79 of the 14,003 stations have no commune. Sixteen coastal stations fell just outside the simplified boundaries and were given the nearest commune. To validate the match, we compared the department of the commune with the department of the postal code: they agree for 99.7% of stations, and the 48 others are flagged (`commune_agrees_cp`). Finally, the commune code was joined to Filosofi to give each station its commune's median living standard (13,907 stations have one). A limit is that the boundaries are simplified, so a station near a border may be assigned to the neighbouring commune.
