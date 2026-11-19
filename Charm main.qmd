@@ -6,30 +6,22 @@ format:
     toc: true
     embed-resources: true
 ---
+##GitHub link:
 GitHub repository: https://github.com/fanimarwa-bit/Charm-Prices
 
-```{r}
-#| warning: false
-#| message: false
-library(tidyverse)
-library(here)
+## Research question:
 
-oil <- read_csv(here("data", "clean", "oil.csv"), show_col_types = FALSE)
-filo <- read_csv(here("data", "clean", "filosofi.csv"),
-                 col_types = cols(commune = "c"))
-cog <- read_csv(here("data", "clean", "cog.csv"),
-                col_types = cols(.default = "c"))
-```
+Do French fuel stations exploit consumers' limited attention? We study two pricing behaviours. The first is "rockets and feathers": do pump prices rise faster when the price of crude oil increases than they fall when it decreases? The second is charm pricing: do stations set prices just below a round number (for example 1.899 € rather than 1.900 €) more often than chance would predict, and do such prices stay unchanged for longer?
 
-```{r}
-info <- tibble(
-  file = c("oil.csv", "filosofi.csv", "cog.csv"),
-  rows = c(nrow(oil), nrow(filo), nrow(cog)),
-  columns = c(ncol(oil), ncol(filo), ncol(cog))
-)
+We then ask whether these behaviours are stronger where drivers have less incentive or ability to compare prices. We look at motorway stations, whose drivers are captive, and at stations located in communes with different income levels, measured by the median living standard and, where it is available, the poverty rate.
 
-knitr::kable(info)
-```
+The unit of analysis is the fuel station. Our data cover `r format(nrow(stations), big.mark = ",")` stations observed daily from 2021 to 2023, for three fuels: Gazole, E10 and SP98. This period includes the sharp rise in oil prices in 2022 and the government fuel rebate of 2022, which makes it a good setting for studying how costs reach drivers. Our initial proposal covered 2007 to 2025. We restricted the project to three years so that the data could be cleaned and matched carefully.
+
+The sources share no common key, so they have to be matched along several dimensions. In space, stations are described by an identifier, a postal code and GPS coordinates, whereas income is published by INSEE commune. A postal code can cover several communes, so we assign each station to its commune with a spatial join on the 2025 commune boundaries, and the station inherits the median living standard of its commune (Filosofi 2021). In time, station prices change at irregular moments, whereas Brent and the exchange rate exist only on business days. We align everything on a daily calendar and convert Brent from dollars per barrel to euros per litre.
+
+The analysis has three steps. First, we compare how quickly pump prices react when the oil price rises and when it falls, and we look at how the 2022 rebate was passed on to drivers. Second, we count how often prices end in each digit and test whether 9 appears more often than chance, and whether prices ending in 9 stay unchanged longer. Third, we compare stations: are these behaviours stronger on motorways, or in richer or poorer communes?
+
+We expect pump prices to follow Brent upward faster than downward, as the "rockets and feathers" literature suggests, and we expect charm prices to be common. We also expect both behaviours to be stronger on motorways, where drivers have little choice. For income we have no strong prior, so we treat it as an open question.
 
 
 ## Sources
@@ -56,6 +48,25 @@ knitr::kable(info)
 **Fuel prices (Ministry of Economy).** **Fuel prices (Ministry of Economy).** The French Ministry of Economy publishes the prices of fuels sold at service stations as open data, in one archive per year. Stations are legally required to declare every price change for each fuel (ministerial order of 12 December 2006), so the data are a log of price changes and not one price per day. Each record gives the station identifier, its GPS coordinates, postal code and city, whether it is on a motorway or a road, the fuel type, the date and time of the change, and the price. We use 2021 to 2023 and keep three fuels: Gazole, E10 and SP98. The files are distributed as XML, which we converted to CSV. A limit is that days without a change have no record, so we carry each station's last price forward for at most 30 days to get one price per station per day.
 
 
+##one table per data file: (ask if it is clean data) 
+
+#cog.csv (communes)
+#daily_national(pump prices and fuel prices daily )
+#filosofi.csv 
+#oil.csv
+# prices_daily_2021
+#prices_daily_2022
+
+
+#
+
+
+
+
+
+
+
+
 
 ## Key variables
 
@@ -80,13 +91,16 @@ knitr::kable(info)
 - **`commune_agrees_cp`**: TRUE if the department of that commune matches the department of the postal code. FALSE for 48 stations.
 
 
-### Joining (to be UPDATED APRES THE FULL MATCHING )
+### Joining (to be UPDATED APRES THE FULL MATCHING ) +my cleaning part (prices + stations+ matching ( pump prices and fuel prices))
 
 **Brent and USD/EUR (done).** The two FRED files were joined on the date (`euug`). A row was then added for every calendar day, and weekends and holidays were filled with the last known value. The result is one table with `r nrow(oil)` daily rows, so every fuel price date will find a match later.
 
 **Filosofi and COG (checked).** We compared the commune codes of the two files: all `r nrow(filo)` Filosofi communes are found in the COG. The `r nrow(cog) - nrow(filo)` COG communes without income data are all overseas (Guadeloupe, French Guiana, Mayotte) and will be excluded from the income analysis. SALMA YOU JOINED DONC A CHANGER CA
 
 **Still to do (`matching.qmd`).** Stations to communes, then communes to Filosofi, and oil to fuel prices through the date. *Details to be completed once the stations and prices are cleaned.*
+
+
+##Graph of the target variable
 ```{r}
 daily_national <- read_csv(here("data", "clean", "daily_national.csv"),
                            show_col_types = FALSE)
@@ -97,10 +111,13 @@ ggplot(daily_national, aes(date, avg_price, colour = fuel)) +
   labs(x = NULL, y = "Average pump price (€ per litre)", colour = "Fuel")
 ```
 
-##draft
+##description of the graph
 
 Average daily pump price in France, 2021 to 2023, for Gazole, E10 and SP98 (in euros per litre, averaged over all stations). The three prices move together: they rise through 2021, reach their highest level in 2022, fall at the end of 2022 and stay lower, with some swings, in 2023. SP98 is the most expensive fuel for most of the period. Gazole is the cheapest at the start but rises above E10 during the 2022 peak.
 
+
+
+#check this later
 ```{r}
 file_info <- function(df, name, source) {
   tibble(Item = c("File", "Source", "Rows", "Columns"),
@@ -136,16 +153,3 @@ knitr::kable(file_info(stations_full, "stations_communes.csv", "Stations + commu
 knitr::kable(file_info(daily_national, "daily_national.csv", "Prices averaged per day + Brent"))
 ```
 
-## Research question:
-
-Do French fuel stations exploit consumers' limited attention? We study two pricing behaviours. The first is "rockets and feathers": do pump prices rise faster when the price of crude oil increases than they fall when it decreases? The second is charm pricing: do stations set prices just below a round number (for example 1.899 € rather than 1.900 €) more often than chance would predict, and do such prices stay unchanged for longer?
-
-We then ask whether these behaviours are stronger where drivers have less incentive or ability to compare prices. We look at motorway stations, whose drivers are captive, and at stations located in communes with different income levels, measured by the median living standard and, where it is available, the poverty rate.
-
-The unit of analysis is the fuel station. Our data cover `r format(nrow(stations), big.mark = ",")` stations observed daily from 2021 to 2023, for three fuels: Gazole, E10 and SP98. This period includes the sharp rise in oil prices in 2022 and the government fuel rebate of 2022, which makes it a good setting for studying how costs reach drivers. Our initial proposal covered 2007 to 2025. We restricted the project to three years so that the data could be cleaned and matched carefully.
-
-The sources share no common key, so they have to be matched along several dimensions. In space, stations are described by an identifier, a postal code and GPS coordinates, whereas income is published by INSEE commune. A postal code can cover several communes, so we assign each station to its commune with a spatial join on the 2025 commune boundaries, and the station inherits the median living standard of its commune (Filosofi 2021). In time, station prices change at irregular moments, whereas Brent and the exchange rate exist only on business days. We align everything on a daily calendar and convert Brent from dollars per barrel to euros per litre.
-
-The analysis has three steps. First, we compare how quickly pump prices react when the oil price rises and when it falls, and we look at how the 2022 rebate was passed on to drivers. Second, we count how often prices end in each digit and test whether 9 appears more often than chance, and whether prices ending in 9 stay unchanged longer. Third, we compare stations: are these behaviours stronger on motorways, or in richer or poorer communes?
-
-We expect pump prices to follow Brent upward faster than downward, as the "rockets and feathers" literature suggests, and we expect charm prices to be common. We also expect both behaviours to be stronger on motorways, where drivers have little choice. For income we have no strong prior, so we treat it as an open question.
