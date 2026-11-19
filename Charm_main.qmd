@@ -179,58 +179,63 @@ data.frame(column = names(df),
 
 ## Key variables
 
--   **`brent_eur_l`**: Brent crude oil price converted to euros per litre (Brent in \$/barrel, divided by the USD/EUR rate, divided by 158.987 litres per barrel). One value per calendar day.
+- **`brent_eur_l`**: Brent crude oil price converted to euros per litre (Brent in \$/barrel, divided by the USD/EUR rate, divided by 158.987 litres per barrel). One value per calendar day.
 
--   **`DCOILBRENTEU`** and **`DEXUSEU`**: the original Brent price in dollars per barrel and the exchange rate in dollars per euro. They are kept so the conversion can be checked.
+- **`DCOILBRENTEU`** and **`DEXUSEU`**: the original Brent price in dollars per barrel and the exchange rate in dollars per euro. They are kept so the conversion can be checked.
 
--     **`date`**: the day of the observation. It is the key used to match oil prices with fuel prices.
+- 
 
--   **`median_living_standard`**: median living standard of a commune, in euros per year (INSEE Filosofi 2021). It measures how well off the typical inhabitant is. Missing for communes where INSEE hides it.
+  ```         
+  **`date`**: the day of the observation. It is the key used to match oil prices with fuel prices.
+  ```
 
--   **`poverty_rate`**: share of people living below the poverty line (60% of the median living standard), in percent. Missing for most small communes.
+- **`median_living_standard`**: median living standard of a commune, in euros per year (INSEE Filosofi 2021). It measures how well off the typical inhabitant is. Missing for communes where INSEE hides it.
 
--   **`commune`**: five-character official commune code (COG), stored as text so leading zeros are kept (e.g. `01001`). It is the join key between stations and Filosofi. **Fuel prices and stations**
+- **`poverty_rate`**: share of people living below the poverty line (60% of the median living standard), in percent. Missing for most small communes.
 
--   **`id`**: identifier of the station, stored as text. It links the prices to the stations file.
+- **`commune`**: five-character official commune code (COG), stored as text so leading zeros are kept (e.g. `01001`). It is the join key between stations and Filosofi. **Fuel prices and stations**
 
--   **`fuel`**: the fuel type (Gazole, E10 or SP98).
+- **`id`**: identifier of the station, stored as text. It links the prices to the stations file.
 
--   **`date`**: the day of the price. It is the key used to match the prices with Brent.
+- **`fuel`**: the fuel type (Gazole, E10 or SP98).
 
--   **`price`**: the pump price in euros per litre.
+- **`date`**: the day of the price. It is the key used to match the prices with Brent.
 
--   **`avg_price`** and **`n_stations`** (in `daily_national.csv`): the average price over all stations for one fuel and one day, and the number of stations counted that day. This is our target variable.
+- **`price`**: the pump price in euros per litre.
 
--   **`latitude`** and **`longitude`**: GPS position of the station, in degrees (WGS 84). Missing for 79 stations.
+- **`avg_price`** and **`n_stations`** (in `daily_national.csv`): the average price over all stations for one fuel and one day, and the number of stations counted that day. This is our target variable.
 
--   **`cp`**: postal code of the station, stored as text to keep the leading zero.
+- **`latitude`** and **`longitude`**: GPS position of the station, in degrees (WGS 84). Missing for 79 stations.
 
--   **`motorway`**: TRUE if the station is on a motorway, FALSE if it is on a road.
+- **`cp`**: postal code of the station, stored as text to keep the leading zero.
 
--   **`last_year`**: the last year in which the station appears in the data.
+- **`motorway`**: TRUE if the station is on a motorway, FALSE if it is on a road.
 
--   **`commune`**: commune code of the station, found by a spatial join on the commune boundaries.
+- **`last_year`**: the last year in which the station appears in the data.
 
--   **`commune_agrees_cp`**: TRUE if the department of that commune matches the department of the postal code. FALSE for 48 stations.
+- **`commune`**: commune code of the station, found by a spatial join on the commune boundaries.
 
+- **`commune_agrees_cp`**: TRUE if the department of that commune matches the department of the postal code. FALSE for 48 stations.
 
 ### Joining (to be UPDATED APRES THE FULL MATCHING ) +my cleaning part (prices + stations+ matching ( pump prices and fuel prices))
 
-# data cleaning 
+# data cleaning
+
 **Brent and USD/EUR (done).** The two FRED files were joined on the date (`euug`). A row was then added for every calendar day, and weekends and holidays were filled with the last known value. The result is one table with `r nrow(oil)` daily rows, so every fuel price date will find a match later.
 
 **Filosofi and COG (checked).** We compared the commune codes of the two files: all `r nrow(filo)` Filosofi communes are found in the COG. The `r nrow(cog) - nrow(filo)` COG communes without income data are all overseas (Guadeloupe, French Guiana, Mayotte) and will be excluded from the income analysis. SALMA YOU JOINED DONC A CHANGER CA
 
-**prices**
-The fuel price files are published as yearly XML archives. We read them line by line, kept the station and price records, attached each price to its station identifier and saved each year as two CSV files, one for stations and one for price changes. We then converted prices to numbers and timestamps to dates. The 2021 file stores prices in thousandths of a euro (1525 instead of 1.525), so values above 10 were divided by 1,000. We removed missing values, prices outside 0.50–3.50 € per litre, dates outside the year of the file and exact duplicates, and kept the last price of each day for each station and fuel. Over the three years, r format(sum(prices_log$raw_rows), big.mark = ",") price records were read and r format(sum(prices_log$kept_rows), big.mark = ",") were kept. For the stations, we combined the three yearly files into one row per station (r format(nrow(stations), big.mark = ",") stations) using the most recent information, converted the coordinates from degrees × 100,000 to degrees, set zero coordinates to missing, restored the leading zero of postal codes and created a motorway indicator.
+**prices** The fuel price files are published as yearly XML archives. We read them line by line, kept the station and price records, attached each price to its station identifier and saved each year as two CSV files, one for stations and one for price changes. We then converted prices to numbers and timestamps to dates. The 2021 file stores prices in thousandths of a euro (1525 instead of 1.525), so values above 10 were divided by 1,000. We removed missing values, prices outside 0.50–3.50 € per litre, dates outside the year of the file and exact duplicates, and kept the last price of each day for each station and fuel. Over the three years, r format(sum(prices_log$raw_rows), big.mark = ",") price records were read and r format(sum(prices_log$kept_rows), big.mark = ",") were kept. For the stations, we combined the three yearly files into one row per station (r format(nrow(stations), big.mark = ",") stations) using the most recent information, converted the coordinates from degrees × 100,000 to degrees, set zero coordinates to missing, restored the leading zero of postal codes and created a motorway indicator.
 
-##matching 
+##matching
 
+**first matching: pump prices and fuel prices** Because the sources share no common key, we matched them in three steps. First, we linked fuel prices to oil through the date. Brent (in dollars per barrel) and the USD/EUR rate were placed on a calendar of every day, with weekends and holidays filled by the last available value, and Brent was converted to euros per litre by dividing by the exchange rate and by 158.987 litres per barrel. Because the FRED files start on 1 January 2021, the first three days of 2021 have no oil price. To compute a national daily average for each fuel, each station keeps its last posted price until it changes, for at most 30 days, so that every active station is counted every day. Second, we joined INSEE Filosofi 2021 to the 2025 list of communes through the commune code. Third, we placed each station in its commune with a spatial join of its GPS coordinates on the 2025 commune boundaries, so that each station inherits the median living standard and poverty rate of its commune; 79 of the 14,003 stations could not be placed, mostly because they have no coordinates. Finally, we built the final dataset by joining the daily prices of Gazole, E10 and SP98 to the station information (by station identifier) and to the oil price (by date), and computed the spread between the pump price and Brent in euros per litre. It is saved as one file per year to stay below GitHub’s 100 MB limit.
 
-**first matching: pump prices and fuel prices**
-Because the sources share no common key, we matched them in three steps. First, we linked fuel prices to oil through the date. Brent (in dollars per barrel) and the USD/EUR rate were placed on a calendar of every day, with weekends and holidays filled by the last available value, and Brent was converted to euros per litre by dividing by the exchange rate and by 158.987 litres per barrel. Because the FRED files start on 1 January 2021, the first three days of 2021 have no oil price. To compute a national daily average for each fuel, each station keeps its last posted price until it changes, for at most 30 days, so that every active station is counted every day. Second, we joined INSEE Filosofi 2021 to the 2025 list of communes through the commune code. Third, we placed each station in its commune with a spatial join of its GPS coordinates on the 2025 commune boundaries, so that each station inherits the median living standard and poverty rate of its commune; 79 of the 14,003 stations could not be placed, mostly because they have no coordinates. Finally, we built the final dataset by joining the daily prices of Gazole, E10 and SP98 to the station information (by station identifier) and to the oil price (by date), and computed the spread between the pump price and Brent in euros per litre. It is saved as one file per year to stay below GitHub’s 100 MB limit.
+**Stations to communes.** The stations file has GPS coordinates and a postal code but no commune code, and a postal code can cover several communes, so we matched each station to a commune with a spatial join on the IGN Admin Express 2025 boundaries. Before the join we repaired the coordinates of 59 stations, where latitude and longitude were swapped and, for 11 of them, had also been divided by 100,000 twice. Five stations in mainland France had impossible values (latitudes above 54°) and were set to missing. Together with the 74 stations that had no coordinates, 79 of the 14,003 stations have no commune. Of the 13,924 stations with coordinates, 13,908 fell inside a commune polygon. The other 16 are coastal stations that fall just outside the simplified boundaries, so we gave each of them the nearest commune.
 
-**Still to do (`matching.qmd`).** Stations to communes, then communes to Filosofi, and oil to fuel prices through the date. *Details to be completed once the stations and prices are cleaned.*
+To check the match, we compared the department of the commune found from the GPS position with the department of the postal code. They agree for 13,876 stations (99.7% of those with a commune). The 48 others are flagged in the data (`commune_agrees_cp`), so they can be excluded as a robustness check. Each station then received the median living standard and poverty rate of its commune: 13,907 stations have a median, and the 17 others are most likely in communes where INSEE hides the value. A limit is that the boundaries are simplified, so a station close to a border may be assigned to the neighbouring commune.
+
+**Prices to stations.** Prices are linked to stations through the station identifier, which is the same in both files.
 
 ## Graph of the target variable
 
