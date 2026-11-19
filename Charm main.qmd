@@ -53,7 +53,7 @@ knitr::kable(info)
 
 **COG 2025 (INSEE).** The Code officiel géographique is the official list of French communes and their codes. After keeping real communes only (`TYPECOM == "COM"`), we have `r nrow(cog)` communes. The codes are the join key with Filosofi. `r nrow(cog) - nrow(filo)` communes of the COG have no Filosofi data (all in Guadeloupe, French Guiana and Mayotte).
 
-**Fuel prices (Ministry of Economy).**
+**Fuel prices (Ministry of Economy).** **Fuel prices (Ministry of Economy).** The French Ministry of Economy publishes the prices of fuels sold at service stations as open data, in one archive per year. Stations are legally required to declare every price change for each fuel (ministerial order of 12 December 2006), so the data are a log of price changes and not one price per day. Each record gives the station identifier, its GPS coordinates, postal code and city, whether it is on a motorway or a road, the fuel type, the date and time of the change, and the price. We use 2021 to 2023 and keep three fuels: Gazole, E10 and SP98. The files are distributed as XML, which we converted to CSV. A limit is that days without a change have no record, so we carry each station's last price forward for at most 30 days to get one price per station per day.
 
 
 
