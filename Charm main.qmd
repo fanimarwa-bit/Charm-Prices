@@ -65,6 +65,20 @@ knitr::kable(info)
 - **`median_living_standard`**: median living standard of a commune, in euros per year (INSEE Filosofi 2021). It measures how well off the typical inhabitant is. Missing for communes where INSEE hides it.
 - **`poverty_rate`**: share of people living below the poverty line (60% of the median living standard), in percent. Missing for most small communes.
 - **`commune`**: five-character official commune code (COG), stored as text so leading zeros are kept (e.g. `01001`). It is the join key between stations and Filosofi.
+**Fuel prices and stations**
+
+- **`id`**: identifier of the station, stored as text. It links the prices to the stations file.
+- **`fuel`**: the fuel type (Gazole, E10 or SP98).
+- **`date`**: the day of the price. It is the key used to match the prices with Brent.
+- **`price`**: the pump price in euros per litre.
+- **`avg_price`** and **`n_stations`** (in `daily_national.csv`): the average price over all stations for one fuel and one day, and the number of stations counted that day. This is our target variable.
+- **`latitude`** and **`longitude`**: GPS position of the station, in degrees (WGS 84). Missing for 79 stations.
+- **`cp`**: postal code of the station, stored as text to keep the leading zero.
+- **`motorway`**: TRUE if the station is on a motorway, FALSE if it is on a road.
+- **`last_year`**: the last year in which the station appears in the data.
+- **`commune`**: commune code of the station, found by a spatial join on the commune boundaries.
+- **`commune_agrees_cp`**: TRUE if the department of that commune matches the department of the postal code. FALSE for 48 stations.
+
 
 ### Joining (to be UPDATED APRES THE FULL MATCHING )
 
@@ -86,4 +100,39 @@ ggplot(daily_national, aes(date, avg_price, colour = fuel)) +
 ##draft
 
 Average daily pump price in France, 2021 to 2023, for Gazole, E10 and SP98 (in euros per litre, averaged over all stations). The three prices move together: they rise through 2021, reach their highest level in 2022, fall at the end of 2022 and stay lower, with some swings, in 2023. SP98 is the most expensive fuel for most of the period. Gazole is the cheapest at the start but rises above E10 during the 2022 peak.
+
+```{r}
+file_info <- function(df, name, source) {
+  tibble(Item = c("File", "Source", "Rows", "Columns"),
+         Value = c(name, source,
+                   format(nrow(df), big.mark = ","),
+                   as.character(ncol(df))))
+}
+stations <- read_csv(here("data", "clean", "stations.csv"),
+                     col_types = cols(.default = "c"), show_col_types = FALSE)
+stations_full <- read_csv(here("data", "clean", "stations_communes.csv"),
+                          col_types = cols(.default = "c"), show_col_types = FALSE)
+communes <- read_csv(here("data", "clean", "communes.csv"),
+                     col_types = cols(.default = "c"), show_col_types = FALSE)
+daily_national <- read_csv(here("data", "clean", "daily_national.csv"),
+                           show_col_types = FALSE)
+
+# prices: three yearly files, read one by one so we can count rows
+prices <- map(2021:2023, function(y)
+  read_csv(here("data", "clean", paste0("prices_daily_", y, ".csv.gz")),
+           col_types = cols(id = "c", fuel = "c"), show_col_types = FALSE))
+
+prices_info <- tibble(
+  Item = c("File", "Source", "Rows", "Columns"),
+  Value = c("prices_daily_2021/2022/2023.csv.gz",
+            "Ministry of Economy (fuel prices)",
+            format(sum(map_int(prices, nrow)), big.mark = ","),
+            as.character(ncol(prices[[1]]))))
+
+knitr::kable(prices_info)
+knitr::kable(file_info(stations, "stations.csv", "Ministry of Economy (stations)"))
+knitr::kable(file_info(communes, "communes.csv", "INSEE COG + Filosofi (joined)"))
+knitr::kable(file_info(stations_full, "stations_communes.csv", "Stations + commune + income"))
+knitr::kable(file_info(daily_national, "daily_national.csv", "Prices averaged per day + Brent"))
+```
 
