@@ -1,0 +1,58 @@
+---
+title: "Final dataset"
+author: "Marwa Fani and Salma Sbihi"
+format: html
+---
+
+```{r}
+here::i_am("Charm-Prices.Rproj")
+library(here)
+library(tidyverse)
+```
+
+## Inputs
+
+```{r}
+stations_communes <- read_csv(here("data", "clean", "stations_communes.csv"),
+                              col_types = cols(id = "c", cp = "c", commune = "c"))
+oil <- read_csv(here("data", "clean", "oil.csv"), show_col_types = FALSE)
+```
+
+## Build the final dataset, one year at a time
+
+One row = one station x fuel x day. Each price gets its station's commune and income (joined by `id`) and the oil price of that day (joined by `date`).
+
+```{r}
+#| eval: false
+build_final <- function(year) {
+  read_csv(here("data", "clean", paste0("prices_daily_", year, ".csv.gz")),
+           col_types = cols(id = "c", fuel = "c", date = "D", price = "d")) %>%
+    filter(fuel %in% c("Gazole", "E10", "SP98")) %>%
+    left_join(stations_communes %>%
+                select(id, commune, motorway, median_living_standard, poverty_rate),
+              by = "id") %>%
+    left_join(oil %>% select(date, brent_eur_l), by = "date") %>%
+    mutate(brent_eur_l = round(brent_eur_l, 4),
+           spread      = round(price - brent_eur_l, 4)) %>%
+    write_csv(here("data", "clean", paste0("final_dataset_", year, ".csv.gz")))
+}
+
+walk(2021:2023, build_final)
+```
+
+## Check
+
+```{r}
+files <- here("data", "clean", paste0("final_dataset_", 2021:2023, ".csv.gz"))
+tibble(file = basename(files), size_mb = round(file.size(files) / 1e6, 1))
+```
+
+```{r}
+final_2022 <- read_csv(files[2], col_types = cols(id = "c", fuel = "c", commune = "c"))
+
+final_2022 %>%
+  summarise(rows       = n(),
+            no_commune = sum(is.na(commune)),
+            no_income  = sum(is.na(median_living_standard)),
+            no_brent   = sum(is.na(brent_eur_l)))
+```
