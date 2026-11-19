@@ -137,6 +137,7 @@ knitr::kable(file_info(daily_national, "daily_national.csv", "Prices averaged pe
 ```
 
 ## Research question:
+
 Do French fuel stations exploit consumers' limited attention? We study two pricing behaviours. The first is "rockets and feathers": do pump prices rise faster when the price of crude oil increases than they fall when it decreases? The second is charm pricing: do stations set prices just below a round number (for example 1.899 € rather than 1.900 €) more often than chance would predict, and do such prices stay unchanged for longer?
 
 We then ask whether these behaviours are stronger where drivers have less incentive or ability to compare prices. We look at motorway stations, whose drivers are captive, and at stations located in communes with different income levels, measured by the median living standard and, where it is available, the poverty rate.
