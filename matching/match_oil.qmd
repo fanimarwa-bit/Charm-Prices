@@ -8,6 +8,7 @@ format: html
 here::i_am("Charm-Prices.Rproj")
 library(here)
 library(tidyverse)
+library(readxl)
 ```
 
 

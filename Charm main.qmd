@@ -31,12 +31,6 @@ info <- tibble(
 knitr::kable(info)
 ```
 
-```{r}
-names(oil)
-ggplot(oil, aes(date, brent_eur_l)) +
-  geom_line() +
-  labs(x = NULL, y = "Brent crude oil (€ per litre)")
-```
 
 ## Sources
 
@@ -79,3 +73,17 @@ ggplot(oil, aes(date, brent_eur_l)) +
 **Filosofi and COG (checked).** We compared the commune codes of the two files: all `r nrow(filo)` Filosofi communes are found in the COG. The `r nrow(cog) - nrow(filo)` COG communes without income data are all overseas (Guadeloupe, French Guiana, Mayotte) and will be excluded from the income analysis. SALMA YOU JOINED DONC A CHANGER CA
 
 **Still to do (`matching.qmd`).** Stations to communes, then communes to Filosofi, and oil to fuel prices through the date. *Details to be completed once the stations and prices are cleaned.*
+```{r}
+daily_national <- read_csv(here("data", "clean", "daily_national.csv"),
+                           show_col_types = FALSE)
+
+ggplot(daily_national, aes(date, avg_price, colour = fuel)) +
+  geom_line() +
+  theme_minimal() +
+  labs(x = NULL, y = "Average pump price (€ per litre)", colour = "Fuel")
+```
+
+##draft
+
+Average daily pump price in France, 2021 to 2023, for Gazole, E10 and SP98 (in euros per litre, averaged over all stations). The three prices move together: they rise through 2021, reach their highest level in 2022, fall at the end of 2022 and stay lower, with some swings, in 2023. SP98 is the most expensive fuel for most of the period. Gazole is the cheapest at the start but rises above E10 during the 2022 peak.
+
