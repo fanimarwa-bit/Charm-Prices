@@ -10,10 +10,35 @@ here::i_am("Charm-Prices.Rproj")
 library(here)
 library(tidyverse)
 
-stations <- read_csv(here("data", "clean", "stations.csv"), col_types = cols(id = "c", cp = "c"))
-filo     <- read_csv(here("data", "clean", "filosofi.csv"), col_types = cols(commune = "c"))
-cog      <- read_csv(here("data", "clean", "cog.csv"), col_types = cols(.default = "c"))
-oil      <- read_csv(here("data", "clean", "oil.csv"), show_col_types = FALSE)
+stations      <- read_csv(here("data", "clean", "stations.csv"),
+                          col_types = cols(id = "c", cp = "c"))
+stations_full <- read_csv(here("data", "clean", "stations_communes.csv"),
+                          col_types = cols(id = "c", cp = "c", commune = "c",
+                                           commune_agrees_cp = "l"))
+filo          <- read_csv(here("data", "clean", "filosofi.csv"),
+                          col_types = cols(commune = "c"))
+cog           <- read_csv(here("data", "clean", "cog.csv"),
+                          col_types = cols(.default = "c"))
+oil           <- read_csv(here("data", "clean", "oil.csv"),
+                          show_col_types = FALSE)
+daily_national <- read_csv(here("data", "clean", "daily_national.csv"),
+                           show_col_types = FALSE)
+prices_log    <- read_csv(here("data", "clean", "prices_log.csv"),
+                          show_col_types = FALSE)
+
+# one function used for every table in the "One table per data file" section
+describe_file <- function(file, col_types = cols()) {
+  df <- read_csv(file, col_types = col_types, show_col_types = FALSE)
+  list(
+    info = data.frame(file         = basename(file),
+                      rows         = format(nrow(df), big.mark = ","),
+                      columns      = ncol(df),
+                      file_size_mb = round(file.size(file) / 1024^2, 2)),
+    vars = data.frame(column = names(df),
+                      type   = sapply(df, function(x) class(x)[1]),
+                      row.names = NULL)
+  )
+}
 ```
 
 ## GitHub link
