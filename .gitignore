@@ -9,3 +9,5 @@ data/raw/*.xml
 data/raw/*.zip
 .DS_Store
 
+
+*_cache/
